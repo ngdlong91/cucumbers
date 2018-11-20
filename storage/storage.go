@@ -1,0 +1,81 @@
+package storage
+
+import (
+	"fmt"
+
+	"database/sql"
+
+	"github.com/jinzhu/gorm"
+	"github.com/spf13/viper"
+	"gopkg.in/doug-martin/goqu.v5"
+)
+
+type Storage interface {
+	Builder() *goqu.Database
+	Close()
+}
+
+type Orm interface {
+	Orm() *gorm.DB
+	Close()
+}
+
+func OrmFromConf(path string) *gorm.DB {
+	viper.SetConfigName("db") // name of config file (without extension)
+
+	viper.AddConfigPath(path + "/conf") // optionally look for config in the working directory
+	if err := viper.ReadInConfig(); err != nil {
+		panic(fmt.Errorf("Fatal errors config file: %s \n", err))
+	}
+	conn := viper.GetString("conn")
+
+	dbServer := viper.GetString("server")
+	user := viper.GetString(dbServer + ".user")
+	pass := viper.GetString(dbServer + ".password")
+	host := viper.GetString(dbServer + ".host")
+	port := viper.GetString(dbServer + ".port")
+	dbName := viper.GetString(dbServer + ".db")
+
+	db, err := gorm.Open("postgres", fmt.Sprintf(
+		conn, user, pass, dbName, host, port))
+
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
+
+var db *goqu.Database
+
+func DatabaseFromConf(path string) *goqu.Database {
+	viper.SetConfigName("db") // name of config file (without extension)
+
+	viper.AddConfigPath(path + "/conf") // optionally look for config in the working directory
+	if err := viper.ReadInConfig(); err != nil {
+		panic(fmt.Errorf("Fatal errors config file: %s \n", err))
+	}
+	conn := viper.GetString("conn")
+
+	dbServer := viper.GetString("server")
+	user := viper.GetString(dbServer + ".user")
+	pass := viper.GetString(dbServer + ".password")
+	host := viper.GetString(dbServer + ".host")
+	port := viper.GetString(dbServer + ".port")
+	dbName := viper.GetString(dbServer + ".db")
+
+	pgDb, err := sql.Open("postgres", fmt.Sprintf(
+		conn, user, pass, dbName, host, port))
+	if err != nil {
+		panic(err.Error())
+	}
+	db = goqu.New("postgres", pgDb)
+	return db
+
+}
+
+type DataFetchMode int
+
+const (
+	FromStorage DataFetchMode = 1
+	FromCache   DataFetchMode = 2
+)
