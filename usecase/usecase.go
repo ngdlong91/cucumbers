@@ -12,6 +12,16 @@ type UseCase interface {
 	IsMoveNext() bool
 }
 
+type InternalUseCase interface {
+	BeforeProcess()
+	Process()
+	AfterProcess()
+	SetMoveNext(goNext bool)
+	IsMoveNext() bool
+}
+
+type InternalWorker func()
+
 type Worker func(c *gin.Context)
 
 func Run(uc UseCase) {
@@ -24,7 +34,4 @@ func Run(uc UseCase) {
 		return
 	}
 	uc.AfterProcess()
-	if !uc.IsMoveNext() {
-		return
-	}
 }
