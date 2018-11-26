@@ -10,6 +10,7 @@ type UseCase interface {
 	AfterProcess()
 	SetMoveNext(goNext bool)
 	IsMoveNext() bool
+	SetContext(c *gin.Context)
 }
 
 type InternalUseCase interface {
