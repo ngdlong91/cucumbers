@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"github.com/astaxie/beego/context"
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,15 +11,14 @@ type UseCase interface {
 	AfterProcess()
 	SetMoveNext(goNext bool)
 	IsMoveNext() bool
+}
+
+type GinUseCase interface {
 	SetContext(c *gin.Context)
 }
 
-type InternalUseCase interface {
-	BeforeProcess()
-	Process()
-	AfterProcess()
-	SetMoveNext(goNext bool)
-	IsMoveNext() bool
+type BeeUseCase interface {
+	SetContext(ctx *context.Context)
 }
 
 type InternalWorker func()

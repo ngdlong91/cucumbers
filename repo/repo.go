@@ -58,10 +58,10 @@ func ExecuteSelect(c DetailRepo) errs.CustomError {
 			return err
 		}
 	} else {
-		//err = c.BuildForStorage()
-		//if !err.IsSuccess() {
-		//	return err
-		//}
+		err = c.BuildForStorage()
+		if !err.IsSuccess() {
+			return err
+		}
 		err = c.LoadFromStorage()
 		if !err.IsSuccess() {
 			return err
