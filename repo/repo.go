@@ -1,4 +1,4 @@
-package repo
+package irepo
 
 import "github.com/ngdlong91/cucumbers/errs"
 
