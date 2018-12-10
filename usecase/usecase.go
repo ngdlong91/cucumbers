@@ -3,6 +3,7 @@ package usecase
 import (
 	"github.com/astaxie/beego/context"
 	"github.com/gin-gonic/gin"
+	"github.com/ngdlong91/cucumbers/dto"
 )
 
 type UseCase interface {
@@ -19,6 +20,8 @@ type GinUseCase interface {
 
 type BeeUseCase interface {
 	SetContext(ctx *context.Context)
+	Response() dto.Response
+	SetResponse(response dto.Response)
 }
 
 type InternalWorker func()

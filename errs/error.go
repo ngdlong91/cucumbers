@@ -1,4 +1,4 @@
-package errs
+package ierr
 
 import "github.com/ngdlong91/cucumbers/dto"
 

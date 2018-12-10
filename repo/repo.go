@@ -19,8 +19,8 @@ const (
 )
 
 type ActionRepo interface {
-	Build() errs.CustomError
-	Execute() errs.CustomError
+	Build() ierr.CustomError
+	Execute() ierr.CustomError
 
 	SetMode(mode ActionMode)
 	Mode() ActionMode
@@ -28,16 +28,15 @@ type ActionRepo interface {
 
 type Repo interface {
 	IsCached() bool
-	BuildForCache() errs.CustomError
-	LoadFromCache() errs.CustomError
-
-	BuildForStorage() errs.CustomError
-	LoadFromStorage() errs.CustomError
+	BuildForCache() ierr.CustomError
+	LoadFromCache() ierr.CustomError
+	BuildForStorage() ierr.CustomError
+	LoadFromStorage() ierr.CustomError
 }
 
 type DetailRepo interface {
 	Repo
-	IsExist() bool
+	IsExist() (bool, ierr.CustomError)
 }
 
 type ListRepo interface {
@@ -46,8 +45,24 @@ type ListRepo interface {
 	Mode() LoadMode
 }
 
-func ExecuteSelect(c DetailRepo) errs.CustomError {
-	var err errs.CustomError
+func Prepare(c Repo) ierr.CustomError {
+	if c.IsCached() {
+		return c.BuildForCache()
+	} else {
+		return c.BuildForStorage()
+	}
+}
+
+func Execute(c Repo) ierr.CustomError {
+	if c.IsCached() {
+		return c.LoadFromCache()
+	} else {
+		return c.LoadFromStorage()
+	}
+}
+
+func ExecuteSelect(c DetailRepo) ierr.CustomError {
+	var err ierr.CustomError
 	if c.IsCached() {
 		err = c.BuildForCache()
 		if !err.IsSuccess() {
@@ -69,8 +84,8 @@ func ExecuteSelect(c DetailRepo) errs.CustomError {
 	}
 	return err
 }
-func ExecuteMultiSelect(c ListRepo) errs.CustomError {
-	var err errs.CustomError
+func ExecuteMultiSelect(c ListRepo) ierr.CustomError {
+	var err ierr.CustomError
 	if c.IsCached() {
 		err = c.BuildForCache()
 		if !err.IsSuccess() {
@@ -92,8 +107,7 @@ func ExecuteMultiSelect(c ListRepo) errs.CustomError {
 	}
 	return err.Success()
 }
-
-func ExecuteAction(c ActionRepo) errs.CustomError {
+func ExecuteAction(c ActionRepo) ierr.CustomError {
 	err := c.Build()
 	if !err.IsSuccess() {
 		return err
