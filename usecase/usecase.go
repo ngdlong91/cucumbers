@@ -21,7 +21,7 @@ type GinUseCase interface {
 type BeeUseCase interface {
 	SetContext(ctx *context.Context)
 	Response() dto.Response
-	SetResponse(response dto.Response)
+	SetResponse(resp dto.Response)
 }
 
 type InternalWorker func()

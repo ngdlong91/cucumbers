@@ -3,6 +3,7 @@ package storage
 import (
 	"github.com/jinzhu/gorm"
 	"gopkg.in/doug-martin/goqu.v5"
+	"database/sql"
 )
 
 type Storage interface {
@@ -17,7 +18,7 @@ type Orm interface {
 	Close()
 }
 
-var db *goqu.Database
+var db *sql.DB
 
 //func DatabaseFromConf(path string) *goqu.Database {
 //	viper.SetConfigName("db") // name of config file (without extension)

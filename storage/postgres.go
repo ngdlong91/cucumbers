@@ -34,7 +34,7 @@ func (orm *PostgresOrm) OrmFromConf(path string) *gorm.DB {
 	host := viper.GetString(dbServer + ".host")
 	port := viper.GetString(dbServer + ".port")
 	dbName := viper.GetString(dbServer + ".db")
-
+//var err err
 	db, err := gorm.Open("postgres", fmt.Sprintf(
 		conn, user, pass, dbName, host, port))
 
@@ -73,13 +73,12 @@ func (storage *PostgresStorage) DatabaseFromConf(path string) *goqu.Database {
 	port := viper.GetString(dbServer + ".port")
 	dbName := viper.GetString(dbServer + ".db")
 
-	pgDb, err := sql.Open("postgres", fmt.Sprintf(
+	db, err := sql.Open("postgres", fmt.Sprintf(
 		conn, user, pass, dbName, host, port))
 	if err != nil {
 		panic(err.Error())
 	}
-	db = goqu.New("postgres", pgDb)
-	return db
+	return goqu.New("postgres", db)
 }
 
 func (storage *PostgresStorage) Builder() *goqu.Database {
@@ -87,7 +86,7 @@ func (storage *PostgresStorage) Builder() *goqu.Database {
 }
 
 func (storage *PostgresStorage) Close() {
-
+	db.Close()
 }
 
 func NewPostgresOrm(logger *logrus.Entry) *PostgresOrm {
@@ -114,6 +113,7 @@ func NewPostgresStorage(logger *logrus.Entry) *PostgresStorage {
 	orm := &PostgresStorage{
 		logger: logger.WithField("database", "postgres"),
 	}
+
 	orm.db = orm.DatabaseFromConf(dir)
 	return orm
 }
