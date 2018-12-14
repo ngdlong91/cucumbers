@@ -34,7 +34,7 @@ func (orm *PostgresOrm) OrmFromConf(path string) *gorm.DB {
 	host := viper.GetString(dbServer + ".host")
 	port := viper.GetString(dbServer + ".port")
 	dbName := viper.GetString(dbServer + ".db")
-//var err err
+	//var err err
 	db, err := gorm.Open("postgres", fmt.Sprintf(
 		conn, user, pass, dbName, host, port))
 
@@ -72,8 +72,8 @@ func (storage *PostgresStorage) DatabaseFromConf(path string) *goqu.Database {
 	host := viper.GetString(dbServer + ".host")
 	port := viper.GetString(dbServer + ".port")
 	dbName := viper.GetString(dbServer + ".db")
-
-	db, err := sql.Open("postgres", fmt.Sprintf(
+	var err error
+	db, err = sql.Open("postgres", fmt.Sprintf(
 		conn, user, pass, dbName, host, port))
 	if err != nil {
 		panic(err.Error())
