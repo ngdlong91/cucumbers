@@ -73,11 +73,14 @@ func (storage *PostgresStorage) DatabaseFromConf(path string) *goqu.Database {
 	port := viper.GetString(dbServer + ".port")
 	dbName := viper.GetString(dbServer + ".db")
 	var err error
-	db, err = sql.Open("postgres", fmt.Sprintf(
-		conn, user, pass, dbName, host, port))
-	if err != nil {
-		panic(err.Error())
+	if db == nil {
+		db, err = sql.Open("postgres", fmt.Sprintf(
+			conn, user, pass, dbName, host, port))
+		if err != nil {
+			panic(err.Error())
+		}
 	}
+
 	return goqu.New("postgres", db)
 }
 
