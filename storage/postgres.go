@@ -9,6 +9,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gopkg.in/doug-martin/goqu.v5"
@@ -108,15 +109,19 @@ func NewPostgresOrm(logger *logrus.Entry) *PostgresOrm {
 
 func NewPostgresStorage(logger *logrus.Entry) *PostgresStorage {
 	logger.Debug("Setup new postgres storage connection")
-	dir, err := os.Getwd()
-	if err != nil {
-		panic(err.Error())
+
+	if path == "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			panic(err.Error())
+		}
+		path = dir
 	}
 
 	orm := &PostgresStorage{
 		logger: logger.WithField("database", "postgres"),
 	}
 
-	orm.db = orm.DatabaseFromConf(dir)
+	orm.db = orm.DatabaseFromConf(path)
 	return orm
 }

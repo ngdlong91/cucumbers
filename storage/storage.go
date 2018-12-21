@@ -20,36 +20,15 @@ type Orm interface {
 }
 
 var db *sql.DB
+var path string
+
+func SetPath(confPath string) {
+	path = confPath
+}
 
 func init() {
 
 }
-
-//func DatabaseFromConf(path string) *goqu.Database {
-//	viper.SetConfigName("db") // name of config file (without extension)
-//
-//	viper.AddConfigPath(path + "/conf") // optionally look for config in the working directory
-//	if err := viper.ReadInConfig(); err != nil {
-//		panic(fmt.Errorf("Fatal errors config file: %s \n", err))
-//	}
-//	conn := viper.GetString("conn")
-//
-//	dbServer := viper.GetString("server")
-//	user := viper.GetString(dbServer + ".user")
-//	pass := viper.GetString(dbServer + ".password")
-//	host := viper.GetString(dbServer + ".host")
-//	port := viper.GetString(dbServer + ".port")
-//	dbName := viper.GetString(dbServer + ".db")
-//
-//	pgDb, err := sql.Open("postgres", fmt.Sprintf(
-//		conn, user, pass, dbName, host, port))
-//	if err != nil {
-//		panic(err.Error())
-//	}
-//	db = goqu.New("postgres", pgDb)
-//	return db
-//
-//}
 
 type DataFetchMode int
 
