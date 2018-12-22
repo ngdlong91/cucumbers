@@ -3,7 +3,7 @@ package usecase
 import (
 	"github.com/astaxie/beego/context"
 	"github.com/gin-gonic/gin"
-	"github.com/ngdlong91/cucumbers/v1/dto"
+	"github.com/ngdlong91/cucumbers/v2/dto"
 )
 
 type UseCase interface {
