@@ -1,6 +1,6 @@
 package ierr
 
-import "github.com/ngdlong91/cucumbers/dto"
+import "github.com/ngdlong91/cucumbers/v1/dto"
 
 type CustomError interface {
 	IsSuccess() bool
