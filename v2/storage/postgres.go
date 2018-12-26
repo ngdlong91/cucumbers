@@ -65,18 +65,20 @@ func (storage *PostgresStorage) DatabaseFromConf(path string) *goqu.Database {
 	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("Fatal errors config file: %s \n", err))
 	}
-	conn := viper.GetString("conn")
 
-	dbServer := viper.GetString("server")
-	user := viper.GetString(dbServer + ".user")
-	pass := viper.GetString(dbServer + ".password")
-	host := viper.GetString(dbServer + ".host")
-	port := viper.GetString(dbServer + ".port")
-	dbName := viper.GetString(dbServer + ".db")
+	conn := viper.GetString("postgres.conn")
+
+	dbServer := viper.GetString("postgres.server")
+	user := viper.GetString("postgres." + dbServer + ".user")
+	pass := viper.GetString("postgres." + dbServer + ".password")
+	host := viper.GetString("postgres." + dbServer + ".host")
+	port := viper.GetString("postgres." + dbServer + ".port")
+	dbName := viper.GetString("postgres." + dbServer + ".db")
 	var err error
+	connParams := fmt.Sprintf(
+		conn, user, pass, dbName, host, port)
 	if db == nil {
-		db, err = sql.Open("postgres", fmt.Sprintf(
-			conn, user, pass, dbName, host, port))
+		db, err = sql.Open("postgres", connParams)
 		if err != nil {
 			panic(err.Error())
 		}

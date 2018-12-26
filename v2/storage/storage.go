@@ -22,7 +22,7 @@ type Orm interface {
 var db *sql.DB
 var path string
 
-func SetPath(confPath string) {
+func SetConfPath(confPath string) {
 	path = confPath
 }
 
