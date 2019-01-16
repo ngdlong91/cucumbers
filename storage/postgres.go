@@ -10,12 +10,37 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/lib/pq"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gopkg.in/doug-martin/goqu.v5"
 )
 
+var storageInfo PostgresStorageInfo
+
+type PostgresStorageInfo struct {
+	IsUpdated bool
+	Conn      string
+	User      string
+	Pass      string
+	Host      string
+	Port      string
+	DbName    string
+}
+
+func SetupPostgresInfo(conn, user, pass, host, port, dbName string) {
+	storageInfo.Conn = conn
+	storageInfo.User = user
+	storageInfo.Pass = pass
+	storageInfo.Host = host
+	storageInfo.Port = port
+	storageInfo.DbName = dbName
+	storageInfo.IsUpdated = true
+
+}
+
 type PostgresOrm struct {
+	mode   int
 	db     *gorm.DB
 	logger *logrus.Entry
 }
@@ -54,13 +79,13 @@ func (orm *PostgresOrm) Orm() *gorm.DB {
 }
 
 type PostgresStorage struct {
+	mode   int
 	db     *goqu.Database
 	logger *logrus.Entry
 }
 
 func (storage *PostgresStorage) DatabaseFromConf(path string) *goqu.Database {
-	viper.SetConfigName("db") // name of config file (without extension)
-
+	viper.SetConfigName("db")           // name of config file (without extension)
 	viper.AddConfigPath(path + "/conf") // optionally look for config in the working directory
 	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("Fatal errors config file: %s \n", err))
@@ -74,9 +99,34 @@ func (storage *PostgresStorage) DatabaseFromConf(path string) *goqu.Database {
 	port := viper.GetString(dbServer + ".port")
 	dbName := viper.GetString(dbServer + ".db")
 	var err error
+	storage.logger.Debug("Setup with postgres info ", fmt.Sprintf(
+		conn, user, pass, dbName, host, port))
 	if db == nil {
 		db, err = sql.Open("postgres", fmt.Sprintf(
 			conn, user, pass, dbName, host, port))
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	return goqu.New("postgres", db)
+}
+
+func (storage *PostgresStorage) SetMode(mode int) {
+	storage.mode = mode
+}
+
+func (storage *PostgresStorage) DatabaseFromInfo() *goqu.Database {
+	if !storageInfo.IsUpdated {
+		panic("please update database info")
+	}
+
+	var err error
+	storage.logger.Debug("Setup with postgres info ", fmt.Sprintf(
+		storageInfo.Conn, storageInfo.User, storageInfo.Pass, storageInfo.DbName, storageInfo.Host, storageInfo.Port))
+	if db == nil {
+		db, err = sql.Open("postgres", fmt.Sprintf(
+			storageInfo.Conn, storageInfo.User, storageInfo.Pass, storageInfo.DbName, storageInfo.Host, storageInfo.Port))
 		if err != nil {
 			panic(err.Error())
 		}
@@ -122,6 +172,11 @@ func NewPostgresStorage(logger *logrus.Entry) *PostgresStorage {
 		logger: logger.WithField("database", "postgres"),
 	}
 
-	orm.db = orm.DatabaseFromConf(path)
+	if orm.mode == 0 {
+		orm.db = orm.DatabaseFromConf(path)
+	} else {
+		orm.db = orm.DatabaseFromInfo()
+	}
+
 	return orm
 }

@@ -1,10 +1,6 @@
 package http
 
 import (
-	"ngdlong91/klit/server/config"
-	"ngdlong91/klit/server/handler"
-	"ngdlong91/klit/storage"
-
 	"fmt"
 
 	"github.com/gin-gonic/gin"
