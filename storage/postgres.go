@@ -18,6 +18,12 @@ import (
 
 var storageInfo PostgresStorageInfo
 
+var storageMode int
+
+func init() {
+	storageMode = 0
+}
+
 type PostgresStorageInfo struct {
 	IsUpdated bool
 	Conn      string
@@ -112,8 +118,8 @@ func (storage *PostgresStorage) DatabaseFromConf(path string) *goqu.Database {
 	return goqu.New("postgres", db)
 }
 
-func (storage *PostgresStorage) SetMode(mode int) {
-	storage.mode = mode
+func SetMode(mode int) {
+	storageMode = mode
 }
 
 func (storage *PostgresStorage) DatabaseFromInfo() *goqu.Database {
@@ -172,7 +178,7 @@ func NewPostgresStorage(logger *logrus.Entry) *PostgresStorage {
 		logger: logger.WithField("database", "postgres"),
 	}
 
-	if orm.mode == 0 {
+	if storageMode == 0 {
 		orm.db = orm.DatabaseFromConf(path)
 	} else {
 		orm.db = orm.DatabaseFromInfo()
