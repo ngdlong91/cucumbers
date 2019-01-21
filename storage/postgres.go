@@ -140,6 +140,9 @@ func (storage *PostgresStorage) DatabaseFromInfo() *goqu.Database {
 		if err != nil {
 			panic(err.Error())
 		}
+		db.SetMaxOpenConns(5)
+		db.SetMaxIdleConns(2)
+		db.SetConnMaxLifetime(time.Hour)
 	}
 
 	return goqu.New("postgres", db)
