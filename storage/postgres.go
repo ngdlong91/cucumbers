@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gopkg.in/doug-martin/goqu.v5"
+	"time"
 )
 
 var storageInfo PostgresStorageInfo
@@ -114,6 +115,9 @@ func (storage *PostgresStorage) DatabaseFromConf(path string) *goqu.Database {
 			panic(err.Error())
 		}
 	}
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(2)
+	db.SetConnMaxLifetime(time.Hour)
 
 	return goqu.New("postgres", db)
 }
