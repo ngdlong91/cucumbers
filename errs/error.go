@@ -6,7 +6,9 @@ type CustomError interface {
 	IsSuccess() bool
 	Msg() string
 	Val() int
-	Response(data interface{}) dto.Response
+	Response(data interface{}, msg ...string) dto.Response
 	SetMsg(msg string)
 	Success() CustomError
+	// Tracking
+	Debug() bool
 }
