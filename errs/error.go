@@ -1,6 +1,6 @@
 package ierr
 
-import "github.com/ngdlong91/cucumbers/v1/dto"
+import "github.com/ngdlong91/cucumbers/dto"
 
 type CustomError interface {
 	IsSuccess() bool
@@ -9,4 +9,6 @@ type CustomError interface {
 	Response(data interface{}) dto.Response
 	SetMsg(msg string)
 	Success() CustomError
+	// Tracking
+	Debug() bool
 }
