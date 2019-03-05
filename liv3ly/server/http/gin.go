@@ -5,13 +5,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/ngdlong91/cucumbers/liv3ly/server/config"
+	"github.com/ngdlong91/cucumbers/liv3ly/storage"
+	"github.com/ngdlong91/cucumbers/liv3ly/server/handler"
 )
 
 type GinServer struct {
 	config  *config.GinConfig
 	logger  *logrus.Entry
 	storage storage.Storage
-	cache   storage.Cache
 	engine  *gin.Engine
 }
 
