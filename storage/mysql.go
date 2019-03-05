@@ -39,10 +39,11 @@ func (storage *MysqlStorage) DatabaseFromConf(path string) *goqu.Database {
 		db, err = sql.Open("mysql", fmt.Sprintf(
 			conn, user, pass, host, port, dbName))
 		if err != nil {
+			storage.logger.Info("connecting db got error: ", err.Error())
+
 			panic(err.Error())
 		}
 	}
-
 	return goqu.New("mysql", db)
 }
 
