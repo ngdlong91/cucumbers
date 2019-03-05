@@ -1,6 +1,6 @@
 package irepo
 
-import "github.com/ngdlong91/cucumbers/errs"
+import "github.com/ngdlong91/cucumbers/liv3ly/errs"
 
 type LoadMode int
 

@@ -1,6 +1,6 @@
 package ierr
 
-import "github.com/ngdlong91/cucumbers/dto"
+import "github.com/ngdlong91/cucumbers/liv3ly/dto"
 
 type CustomError interface {
 	IsSuccess() bool
@@ -10,5 +10,5 @@ type CustomError interface {
 	SetMsg(msg string)
 	Success() CustomError
 	// Tracking
-	Debug() bool
+	//Debug() bool
 }
