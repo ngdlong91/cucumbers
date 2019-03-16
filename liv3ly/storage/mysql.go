@@ -73,3 +73,18 @@ func NewMysqlStorage(logger *logrus.Entry) *MysqlStorage {
 	orm.db = orm.DatabaseFromConf(path)
 	return orm
 }
+
+type MysqlStorageHelper struct {
+}
+
+func (h *MysqlStorageHelper) EncryptField(field, key string) goqu.SqlFunctionExpression {
+	return goqu.Func("AES_ENCRYPT", field, key)
+}
+
+func (h *MysqlStorageHelper) DecryptField(field, key string) goqu.SqlFunctionExpression {
+	return goqu.Func("AES_DECRYPT", goqu.I(field), key)
+}
+
+func NewMySQLHelper() *MysqlStorageHelper {
+	return &MysqlStorageHelper{}
+}
