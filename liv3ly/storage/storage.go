@@ -21,9 +21,14 @@ type Orm interface {
 
 var db *sql.DB
 var path string
+var IsTestMode bool
 
 func SetPath(confPath string) {
 	path = confPath
+}
+
+func SetTest(isTest bool) {
+	IsTestMode = isTest
 }
 
 func init() {
