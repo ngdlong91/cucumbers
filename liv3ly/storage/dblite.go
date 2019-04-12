@@ -6,8 +6,8 @@ import (
 	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
-	_ "gopkg.in/doug-martin/goqu.v4/adapters/sqlite3"
 	"gopkg.in/doug-martin/goqu.v5"
+	_ "gopkg.in/doug-martin/goqu.v5/adapters/sqlite3"
 
 	"fmt"
 
