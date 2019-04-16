@@ -2,9 +2,10 @@ package storage
 
 import (
 	"encoding/json"
-	"github.com/go-sql-driver/mysql"
 	"os"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
 
 	"fmt"
 
@@ -89,6 +90,42 @@ func (h *MysqlStorageHelper) EncryptField(field, key string) goqu.SqlFunctionExp
 
 func (h *MysqlStorageHelper) DecryptField(field, key string) goqu.SqlFunctionExpression {
 	return goqu.Func("AES_DECRYPT", goqu.I(field), key)
+}
+
+type CaseWhen struct {
+	exs goqu.ExpressionList
+}
+
+type caseWhen struct {
+	ex  goqu.Expression
+	end goqu.Expression
+	as  goqu.Expression
+}
+
+func (h *MysqlStorageHelper) CaseWhen() *caseWhen {
+	return &caseWhen{}
+}
+
+func (h *caseWhen) Case(expression goqu.Expression) *caseWhen {
+	h.ex = expression
+	return h
+}
+
+func (h *caseWhen) WhenEq(col goqu.IdentifierExpression, colVal, setValue string) goqu.Expression {
+	return goqu.L("WHEN ? = ? THEN ?", col, colVal, setValue)
+}
+
+func (h *caseWhen) WhenGt(col goqu.IdentifierExpression, colVal, setValue string) goqu.Expression {
+	return goqu.L("WHEN ? > ? THEN ?", col, colVal, setValue)
+}
+
+func (h *caseWhen) Else(value interface{}) *caseWhen {
+	h.end = goqu.L("ELSE ? ", value)
+	return h
+}
+
+func (h *caseWhen) Build(finalColName string) goqu.Expression {
+	return goqu.L("CASE ? ? END ?", h.ex, h.end, goqu.I(finalColName))
 }
 
 func NewMySQLHelper() *MysqlStorageHelper {
