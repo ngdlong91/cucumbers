@@ -1,0 +1,76 @@
+name: Deploy to GKE
+on: ['deployment']
+
+env:
+  GKE_PROJECT: project-name
+  NAMESPACE: project-namespace
+  RELEASE: project-name
+  
+
+jobs:
+  deployment:
+    runs-on: 'ubuntu-latest'
+    steps:
+    - name: 'Checkout'
+      uses: 'actions/checkout@v2'
+
+    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      with:
+        version: '270.0.0'
+        service_account_email: ${{ secrets.GKE_DEPLOY_BOT_EMAIL }}
+        service_account_key: ${{ secrets.GKE_DEPLOY_BOT_TOKEN }}
+
+    - run: gcloud auth configure-docker
+
+    - name: Setup helm
+      run: |
+        wget https://get.helm.sh/helm-v3.0.3-linux-amd64.tar.gz
+        tar -xzf helm-v3.0.3-linux-amd64.tar.gz
+        mv ./linux-amd64/helm .
+
+    - name: Deploy to staging
+      if: github.event.deployment.environment == 'staging'
+      run: |
+        gcloud container clusters get-credentials staging --zone asia-southeast1-a --project $GKE_PROJECT
+
+        ./helm upgrade $RELEASE ./deployments/helm/charts/${RELEASE} \
+          --install --wait --atomic --namespace=$NAMESPACE \
+          --values=./deployments/helm/charts/${RELEASE}/values.yaml \
+          --set=appVersion=${{ github.event.deployment.payload.tag }} \
+          --set=image.tag=${{ github.event.deployment.payload.tag }} \
+          --set=storage.secret_key=${{ secrets.STAGING_STORAGE_SECRET_KEY }} \
+          --set=db.pg_connection_uri=${{ secrets.STAGING_PG_CONNECTION_URI }} \
+          --set=firebase_credentials="${{ secrets.STAGING_FIREBASE_CREDENTIALS }}" \
+          --set=env.environment.value="stag"
+  
+    - name: Deploy to production
+      if: github.event.deployment.environment == 'production'
+      run: |
+        gcloud container clusters get-credentials production-blue --zone asia-southeast1-b --project $GKE_PROJECT
+
+        ./helm upgrade $RELEASE ./deployments/helm/charts/${RELEASE} \
+          --install --wait --atomic --namespace=$NAMESPACE \
+          --values=./deployments/helm/charts/${RELEASE}/values.yaml \
+          --set=appVersion=${{ github.event.deployment.payload.tag }} \
+          --set=image.tag=${{ github.event.deployment.payload.tag }} \
+          --set=storage.secret_key=${{ secrets.PRODUCTION_STORAGE_SECRET_KEY }} \
+          --set=db.pg_connection_uri=${{ secrets.PRODUCTION_PG_CONNECTION_URI }} \
+          --set=firebase_credentials="${{ secrets.PRODUCTION_FIREBASE_CREDENTIALS }}" \
+          --set=env.environment.value="prod" \
+          --set=env.jwt.endpoints="https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com" \
+          --set=env.jwt.audiences="student-coach-e1e95" \
+          --set=env.jwt.issuers="https://securetoken.google.com/"
+
+    - name: Deployment success
+      if: success()
+      uses: 'deliverybot/deployment-status@v1'
+      with:
+        state: 'success'
+        token: '${{ secrets.BUILD_GITHUB_TOKEN }}'
+
+    - name: Deployment failure
+      if: failure()
+      uses: 'deliverybot/deployment-status@v1'
+      with:
+        state: 'failure'
+        token: '${{ secrets.BUILD_GITHUB_TOKEN }}'
