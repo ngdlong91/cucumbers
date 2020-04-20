@@ -1,0 +1,100 @@
+name: Build and Test
+
+on:
+  pull_request:
+    types: [assigned, opened, synchronize, reopened]
+
+env:
+  GITHUB_TOKEN: ${{ secrets.BUILD_GITHUB_TOKEN }}
+  BUILDER_IMAGE: "docker.pkg.github.com/manabie-com/bob/tester:latest"
+  GITHUB_OWNER: ngdlong91 # is ngdlong91 in github.com/ngdlong91/cucumbers
+  GITHUB_PROJECT_NAME: cucumbers  
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: '1.13.7'
+
+      - name: Config git for private modules
+        env:
+          TOKEN: ${{ secrets.BUILD_GITHUB_TOKEN }}
+        run: git config --global url."https://${TOKEN}:x-oauth-basic@${GITHUB_OWNER}/${GITHUB_PROJECT_NAME}".insteadOf "https://${GITHUB_OWNER}/${GITHUB_PROJECT_NAME}"
+
+      - name: Cache dependencies
+        uses: actions/cache@v1
+        id: cache
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Fetch dependencies
+        env:
+          GO111MODULE: "on"
+          GOPRIVATE: "github.com/${GITHUB_OWNER}"
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: go mod download
+
+      - name: Vendor dependencies
+        run: go mod vendor
+
+      - name: Lint
+        uses: reviewdog/action-golangci-lint@v1
+        env:
+          GOROOT: ""
+        with:
+          github_token: ${{ secrets.BUILD_GITHUB_TOKEN }}
+          golangci_lint_flags: "--modules-download-mode vendor --timeout 30m -v"
+          reporter: github-pr-review
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+
+      - name: Login Github Container Registry
+        env:
+          DOCKER_REGISTRY_URL: "docker.pkg.github.com"
+          DOCKER_USERNAME: "botmanabie"
+          DOCKER_TOKEN: ${{ secrets.BUILD_GITHUB_TOKEN }}
+        run: |
+          docker login ${DOCKER_REGISTRY_URL} -u ${DOCKER_USERNAME} -p "${DOCKER_TOKEN}"
+          docker pull ${BUILDER_IMAGE} || exit 0
+
+      - name: Login GCP Container Registry
+        env:
+          DOCKER_REGISTRY_URL: "asia.gcr.io"
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        run: |
+          docker login ${DOCKER_REGISTRY_URL} -u ${DOCKER_USERNAME} -p "${DOCKER_TOKEN}"
+
+      - name: Build
+        run: |
+          docker build --ulimit memlock=-1 -f deployments/test.Dockerfile --cache-from ${BUILDER_IMAGE} --build-arg=github_token=${GITHUB_TOKEN} -t ${BUILDER_IMAGE} .
+          docker push ${BUILDER_IMAGE}
+
+      - name: Prepare services
+        env:
+          DOCKER_FILE: "./deployments/test.Dockerfile"
+        run: |
+          docker-compose --file deployments/docker-compose.yml up -d db nats_streaming_db s3_storage fake_firebase frosty nats_streaming
+          docker-compose --file deployments/docker-compose.yml up -d app_test
+
+      - name: Test Unit
+        env:
+          DOCKER_FILE: "test.Dockerfile"
+        run: docker-compose -f deployments/docker-compose.yml exec -T app_test sh -c "go test ./internal/... -cover -covermode=count -coverprofile=cover.out -coverpkg=./internal/... && go tool cover -func=cover.out"
+
+      - name: Test Intergrate
+        env:
+          DOCKER_FILE: "test.Dockerfile"
+        run: docker-compose -f deployments/docker-compose.yml exec -T app_test sh -c "cd ./features && godog ."
