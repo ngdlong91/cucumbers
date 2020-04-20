@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+      - prereleased
+
+env:
+  GITHUB_TOKEN: ${{ secrets.BUILD_GITHUB_TOKEN }}
+  GITHUB_DEPLOYMENT_URL: "https://api.github.com/repos/manabie-com/bob/deployments"
+  DOCKER_REGISTRY_URL: "asia.gcr.io"
+  DOCKER_APP_REPO: "asia.gcr.io/student-coach-e1e95/bob"
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+  BUILDER_IMAGE: "docker.pkg.github.com/ngdlong91/cucumbers/builder:latest"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+
+      - name: Login Github Container Registry
+        env:
+          DOCKER_REGISTRY_URL: "docker.pkg.github.com"
+          DOCKER_USERNAME: "botmanabie"
+          DOCKER_TOKEN: ${{ secrets.BUILD_GITHUB_TOKEN }}
+        run: |
+          docker login ${DOCKER_REGISTRY_URL} -u ${DOCKER_USERNAME} -p "${DOCKER_TOKEN}"
+          docker pull ${BUILDER_IMAGE}
+
+      - name: Login GCP Container Registry
+        run: |
+          docker login ${DOCKER_REGISTRY_URL} -u ${DOCKER_USERNAME} -p "${DOCKER_TOKEN}"
+
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=version::${GITHUB_REF/refs\/tags\//}
+
+      - name: Get environment
+        id: get_env
+        run: |
+          # set this to make bash matches patterns in a case-insensitive
+          shopt -s nocasematch
+
+          name="${{ github.event.release.name }}"
+          body="${{ github.event.release.body }}"
+          if [[ "$name" == *"deploy::to::staging"* || "$body" == *"deploy::to::staging"* ]]; then
+            echo "::set-output name=environment::staging"
+          elif [[ "$name" == *"deploy::to::production"* || "$body" == *"deploy::to::production"*  ]]; then
+            echo "::set-output name=environment::production"
+          fi
+
+      - name: Build new image
+        run: |
+          docker build -f deployments/release.Dockerfile --build-arg=github_token=${GITHUB_TOKEN} -t ${DOCKER_APP_REPO}:${{ steps.get_version.outputs.version }} .
+          docker push ${DOCKER_APP_REPO}:${{ steps.get_version.outputs.version }}
+
+      - name: Create Github deployment
+        if: steps.get_env.outputs.environment != ''
+        run: |
+          # create new Github Actions deployment
+          curl -XPOST ${GITHUB_DEPLOYMENT_URL} \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -d '{
+              "required_contexts": [],
+              "environment": "'"${{ steps.get_env.outputs.environment }}"'",
+              "ref": "'"${GITHUB_REF}"'",
+              "auto_merge": false,
+              "payload": {
+                "tag": "'"${{ steps.get_version.outputs.version }}"'"
+              }
+            }'
